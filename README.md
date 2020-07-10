@@ -57,7 +57,7 @@ For example:
 ```
 nohup python3 TBias_13456.py 20 \
     -v chr1.vcf \
-    -b No_Treatment_5.bam \
+    -b chr1_Bam/ \
     -g chr1.gtf
 ```
 
