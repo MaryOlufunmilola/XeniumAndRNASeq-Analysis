@@ -48,24 +48,24 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
-  -v [VCF], --vcf [VCF]  Path to the vcf file (required)
-  -b [BAM], --bam [BAM]  Path to the bam file (required)
-  -g [GTF], --gtf [GTF]  Path to the gtf file (required).
+  -v [VCF], --vcf [VCF]  vcf file (required)
+  -b [BAMDIR], --bamDir [BAMDIR]  Full Path to the bam file(s) (required)
+  -g [GTF], --gtf [GTF]  gtf file (required).
 ```
 
 For example:
 ```
 nohup python3 TBias_13456.py 20 \
-    -v chr1.vcf \
-    -b No_Treatment_5.bam \
+    -v example.vcf \
+    -b chr1_Bam/ \
     -g chr1.gtf
 ```
 
 You can download example bam, vcf and gtf files:
 
 ```
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam.bai
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1.vcf
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1.gtf
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example1.bam
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example1.bam.bai
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example.vcf
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/chr1.gtf
 ```
