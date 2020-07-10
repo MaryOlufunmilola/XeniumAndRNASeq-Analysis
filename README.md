@@ -61,7 +61,7 @@ nohup python3 TBias_steps.py 20 \
     -g chr1.gtf
 ```
 
-You can download our example bam, vcf and gtf files:
+You can download example bam, vcf and gtf files:
 
 ```
 wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam
