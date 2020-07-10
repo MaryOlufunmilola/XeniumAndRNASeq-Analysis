@@ -40,7 +40,17 @@ Download from Github
 ```
 git clone https://github.com/MaryOlufunmilola/Trans-Bias
 cd TBias 
-nohup python3 TBias_steps.py depth_value -v vcf_file -b bam_file -g gtf_file &
+
+usage: TBias_steps.py [-h] -v [VCF] -b [BAM] -g [GTF] Tdp
+
+positional arguments:
+  Tdp                Input the total depth threshold
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -v [VCF], --vcf [VCF]  Path to the vcf file (required)
+  -b [BAM], --bam [BAM]  Path to the bam file (required)
+  -g [GTF], --gtf [GTF]  Path to the gtf file (required).
 ```
 
 For example:
