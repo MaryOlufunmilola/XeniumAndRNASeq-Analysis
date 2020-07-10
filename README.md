@@ -8,9 +8,10 @@ If you don't have pip installed, you need to install pip first.
 
 ``` 
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py 
+sudo python get-pip.py
 ```
 
-sudo python get-pip.py
+
 
 Download from Github
 
