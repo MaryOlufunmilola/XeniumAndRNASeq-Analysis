@@ -48,15 +48,15 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
-  -v [VCF], --vcf [VCF]  Path to the vcf file (required)
-  -b [BAM], --bam [BAM]  Path to the bam file (required)
-  -g [GTF], --gtf [GTF]  Path to the gtf file (required).
+  -v [VCF], --vcf [VCF]  vcf file (required)
+  -b [BAMDIR], --bamDir [BAMDIR]  Full Path to the bam file(s) (required)
+  -g [GTF], --gtf [GTF]  gtf file (required).
 ```
 
 For example:
 ```
 nohup python3 TBias_13456.py 20 \
-    -v chr1.vcf \
+    -v example.vcf \
     -b chr1_Bam/ \
     -g chr1.gtf
 ```
