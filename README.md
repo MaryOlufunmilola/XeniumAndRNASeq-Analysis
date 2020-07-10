@@ -41,7 +41,7 @@ Download from Github
 git clone https://github.com/MaryOlufunmilola/Trans-Bias
 cd TBias 
 
-usage: TBias_steps.py [-h] -v [VCF] -b [BAM] -g [GTF] Tdp
+usage: TBias_13456.py [-h] -v [VCF] -b [BAM] -g [GTF] Tdp
 
 positional arguments:
   Tdp                Input the total depth threshold
@@ -55,7 +55,7 @@ optional arguments:
 
 For example:
 ```
-nohup python3 TBias_steps.py 20 \
+nohup python3 TBias_13456.py 20 \
     -v chr1.vcf \
     -b No_Treatment_5.bam \
     -g chr1.gtf
