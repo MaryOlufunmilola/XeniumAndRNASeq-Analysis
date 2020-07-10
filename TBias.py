@@ -5,8 +5,6 @@ import shutil
 import json
 from argparse import RawTextHelpFormatter
 from Bio import SeqIO
-import time
-start = time.time()
 
 def int_pos(value):
     i = int(value)
@@ -14,7 +12,6 @@ def int_pos(value):
         raise argparse.ArgumentTypeError("%s is not a positive integer value" % value)
     return i
 	
-# arguments parsing
 parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter) 
 parser.add_argument('Tdp', help = "Input the total depth threshold", type=int_pos)
 parser.add_argument("-v", "--vcf", help = "Path to the vcf file (required)", required=True)
@@ -40,7 +37,6 @@ if not os.path.exists(outputDir):
 	os.mkdir(outputDir)
 
 
-#loading vcf files then output bed
 def step1(vcf, bedD, vcfdepth):
     print("Starting Step 1")
     print("\tVcf File Location: " + vcf)
@@ -49,7 +45,7 @@ def step1(vcf, bedD, vcfdepth):
     try:
         input = open(vcf, "r")
     except (OSError, IOError) as e:
-        print("####ERROR:can not load vcf file " + vcf)
+        print("ERROR:can not load vcf file " + vcf)
         raise Exception(e)
 
     for line in input:
