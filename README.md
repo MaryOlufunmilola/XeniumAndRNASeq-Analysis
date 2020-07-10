@@ -6,7 +6,10 @@ Transcription analysis of Aligned reads. Trans-Bias depends on R and Python 3.
 
 If you don't have pip installed, you need to install pip first.
 
-``` curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py ```
+``` 
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py 
+
+```
 
 sudo python get-pip.py
 
