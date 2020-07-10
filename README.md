@@ -64,8 +64,8 @@ nohup python3 TBias_13456.py 20 \
 You can download example bam, vcf and gtf files:
 
 ```
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam.bai
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1.vcf
-wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1.gtf
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example1.bam
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example1.bam.bai
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/example.vcf
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/chr1.gtf
 ```
