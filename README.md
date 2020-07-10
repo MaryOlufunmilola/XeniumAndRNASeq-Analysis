@@ -1,8 +1,8 @@
-# Trans-Bias
+## Trans-Bias
 
 Transcription analysis of Aligned reads. Trans-Bias depends on R and Python 3.
 
-# Installation
+## Installation
 
 If you don't have pip installed, you need to install pip first.
 
@@ -38,24 +38,21 @@ Install R packages in R
 
 install.packages(c("optparse", "rmarkdown", "knitr", "pscl", "gridExtra"))
 
-# Input
-
-A vcf file (chr1.vcf) where the first two columns are chromosome and position. 
-
-A bam file (chr1.bam) 
-
-A gtf file (chr1.gtf) 
-
-# Usage
+## Usage
 
 nohup python3 TBias_steps.py depth_value -v vcf_file -b bam_file -g gtf_file &
 
-optional arguments:
+For example:
+
+nohup python3 TBias_steps.py 20 \
   
-  -h, --help            show this help message and exit
- 
-  -v vcf file 
+  -v chr1.vcf \
   
-  -b bam file
+  -b chr1.bam \
   
-  -g gtf file
+  -g chr1.gtf
+
+You can download our example bam files:
+
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans_Bias/chr1_Bam/No_Treatment_5.bam.bai
