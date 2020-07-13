@@ -4,33 +4,28 @@ Transcription analysis of Aligned reads. Trans-Bias depends on R and Python 3.
 
 ## Installation
 
+If Python version is lower than 3.8 or not installed, run the commands below sequentially:
+
+```
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.8
+```
+
 If you don't have pip installed:
 
 ``` 
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py 
-sudo python get-pip.py
+sudo python3.8 get-pip.py
+python3.8 -m pip install biopython
 ```
 
-Check if Python3.7 is installed in Ubuntu.
+Install R packages in >=R3.4
 
 ```
-python -version
-```
-
-If Python version is lower than 3.7 or not installed, run the commands below sequentially:
-
-```
-sudo apt update
-sudo apt install software-properties-common
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update
-sudo apt install python3.7
-```
-
-Install R packages in R
-
-```
-install.packages(c("optparse", "rmarkdown", "knitr", "pscl", "gridExtra"))
+BiocManager::install("Rsamtools")
+install.packages(c("Rsamtools", "reshape2","ggplot2","jsonlite","rmarkdown"))
 ```
 
 ## Usage
