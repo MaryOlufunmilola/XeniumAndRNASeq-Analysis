@@ -36,7 +36,6 @@ outputDir= currentDir + '/results/'
 if not os.path.exists(outputDir):
 	os.mkdir(outputDir)
 
-
 def step1(vcf, bedD, vcfdepth):
     print("Starting Step 1")
     print("\tVcf File Location: " + vcf)
@@ -52,7 +51,7 @@ def step1(vcf, bedD, vcfdepth):
         if line.startswith("##"):
             continue
         elif line.startswith("#CHROM"):
-            samples=line.split("\t")
+            samples=line.rstrip('\n').split("\t")
             num_sample=len(samples)-9
             print("\tThere are "+ str(num_sample)+ " samples in " + vcf + "\n")
             for i in range(9, len(samples)):
@@ -74,7 +73,7 @@ def step1(vcf, bedD, vcfdepth):
             bed[i-9].write(words[0]+"\t"+words[1]+"\t"+words[3]+"\n")
 
 def step2(step, bam, bed, pileup):
-	print("\tStarting Step 2")
+	print("Starting Step 2")
 	print("\tBamfile Directory: " + bam)
 	print("\tBedfile Directory: " + bed)
 	print("\tOutput Pileup Directory: " + pileup)
@@ -370,15 +369,11 @@ def step6():
 	return dict6
 
 def step7(step, output):
-	print("Starting Step 9")
+	print("Starting Step 7")
+	print("Creating markdown summary")
 	print("\tOutput Directory: " + output)
 	os.system('/usr/bin/Rscript TBias_278.r ' + step + ' ' + output)
-	
-def step8(step, output):
-	print("Creating markdown summary")
-	print("\tFile Location: " + output)
-	os.system('/usr/bin/Rscript TBias_278.r ' + step + ' ' + output + ' filler filler 8')
-	
+
 #############################
 if os.path.exists(args.vcf):
     step1(args.vcf, bedDir, args.Tdp)
@@ -402,6 +397,7 @@ else:
 if dict2:
     dict4 = step4(args.gtf)
     shutil.rmtree(pileupDir)
+	
 else:
     print("Gtf file not in this directory, Cannot move on to step 4")
     exit()
@@ -422,7 +418,7 @@ if dict5:
 else:
     print("Cannot move to Step 6, Error in previous step")
     exit()
-    
+
 if dict6:
     step7("7", outputDir)
     dict5.clear()
@@ -431,9 +427,3 @@ else:
     print("Cannot move to Step 7, Error in previous step")
     exit()
     
-# if any(File.endswith(".png") for File in os.listdir(outputDir)):
-    # step8("8", outputDir)
-# else:
-    # print("Cannot move to last step, Error in previous step")
-    # exit()
-# print('It took', time.time()-start, 'seconds.')

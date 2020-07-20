@@ -1,0 +1,61 @@
+---
+title: "Single Nucleotide Polymorphism Transcription Bias"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, fig.path=Outpath)
+library(reshape2)
+library(ggplot2)
+library(jsonlite)
+library(knitr)
+
+dict5 <- fromJSON("dict5.json", flatten=TRUE)
+dict6 <- fromJSON("dict6.json")	
+num <- length(dict6)
+
+```
+## This project contains `r num` samples analyzed:
+
+```{r TBias,eval=TRUE, echo=FALSE, results='asis', warning=FALSE, message=FALSE,fig.path=Outpath}
+for (i in 1:length(dict6)){
+	a = data.frame(ref_alt = names(dict6[i][[1]]), tr = as.integer(sapply(dict6[i][[1]], '[[', 1)), ntr = as.integer(sapply(dict6[i][[1]], '[[', 2)))
+	if(length(dict5[i][[1]]) > 0) {
+		d6 = strsplit(dict5[i][[1]], "[\t]")
+		xx = as.data.frame(do.call(rbind, d6))
+		yy = xx[,3:5]
+		colnames(yy) = c("ref_alt","tr","ntr")
+		yy = yy[order(yy$ref_alt),]
+
+		yy[,2] = as.numeric(levels(yy[,2]))[yy[,2]]
+		yy[,3] = as.numeric(levels(yy[,3]))[yy[,3]]
+		zz =melt(yy,id="ref_alt")
+		x = split(zz, zz$ref_alt)
+		
+		if (any(sapply(x,nrow) < 4)){ 
+			y = x[-which(sapply(x, nrow) < 4)]
+		} else {
+			y=x
+		}
+
+		tests <- lapply(y, function(y) t.test(value ~ variable, y))
+		g = sapply(tests, "[[", "p.value")
+	   
+		aa <- a[which(a$ref_alt %in% names(g)),]
+		aa$pval  <- lapply(g, round, 2)
+		aa$Ref_alt = paste(aa$ref_alt," ", "(p=",aa$pval, ")")
+		
+		fsubname = sub('\\.pileup$', '', basename(names(dict5[i])))
+		fname = paste0(Outpath,fsubname,'.csv')
+		ab = data.frame(lapply(aa, as.character), stringsAsFactors=FALSE)
+		write.table(ab, fname, row.names=FALSE)
+		
+		print(knitr::kable(aa[,-5],row.names = FALSE, align="l", padding=1, caption = toupper(fsubname)))
+		cat('\n\n')
+		df <- melt(a[,-4])
+		p <- ggplot(df, aes(factor(ref_alt), value, fill = variable)) + geom_bar(stat="identity", position = "dodge") +  scale_x_discrete(expand = c(0, 0)) +  scale_y_continuous(expand = c(0, 0)) +scale_fill_brewer(palette = "Set1") + theme_bw() + labs(x="", y="") + theme(legend.position="top",axis.title.x=element_blank(), axis.text.x = element_text(angle=90),panel.grid.major = element_blank(),panel.grid.minor = element_blank())
+		print(p)
+		cat('\n\n')
+	}
+}
+```
