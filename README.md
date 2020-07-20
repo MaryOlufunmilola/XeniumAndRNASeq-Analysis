@@ -31,12 +31,14 @@ sudo apt install python3.8
 Install R packages in >=R3.6
 
 ```
-install.packages(c("optparse", "rmarkdown", "knitr", "pscl", "gridExtra"))
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("Rsamtools")
+
+install.packages(c("rmarkdown", "knitr", "jsonlite", "ggplot2", "reshape2"))
 ```
 
-### Quickstart
-
-#### Usage:
+### Usage:
 
 Download from Github
 
@@ -69,6 +71,3 @@ You can download example bam, vcf and gtf files:
 ```
 wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/chr1.gtf
 ```
-
-
-##### Format of the output file:

@@ -77,7 +77,7 @@ def step2(step, bam, bed, pileup):
 	print("\tBamfile Directory: " + bam)
 	print("\tBedfile Directory: " + bed)
 	print("\tOutput Pileup Directory: " + pileup)
-	os.system('/root/R_alternatives/3.6.2/bin/Rscript TBias_278.r ' + step + ' ' + bam + ' ' + bed + ' '+ pileup)
+	os.system('/usr/bin/Rscript TBias_278.r ' + step + ' ' + bam + ' ' + bed + ' '+ pileup)
 
 def step3(pileup):
 	print("Starting Step 3")
