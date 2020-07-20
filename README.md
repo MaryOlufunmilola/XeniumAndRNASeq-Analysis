@@ -12,7 +12,7 @@ curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 sudo python get-pip.py
 ```
 
-Check if Python3.7 is installed in Ubuntu.
+Check if Python3.8 is installed in Ubuntu.
 
 ```
 python -version
