@@ -47,7 +47,7 @@ Download from Github
 git clone https://github.com/MaryOlufunmilola/Trans-Bias
 cd TBias 
 
-usage: TBias_13456.py [-h] -v [VCF] -b [BAM] -g [GTF] Tdp
+usage: python3 TBias.py [-h] -v [VCF] -b [BAM] -g [GTF] Tdp
 
 positional arguments:
   Tdp                Input the total depth threshold
@@ -61,14 +61,12 @@ optional arguments:
 
 For example:
 ```
-nohup python3 TBias.py 20 \
-    -v example.vcf \
-    -b Trans-Bias-Bam/ \
-    -g chr1.gtf &
+python3 TBias.py 20 -v example.vcf -b Bam/ -g chr1.gtf 
 ```
 
 You can download example bam, vcf and gtf files:
 
 ```
 wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/chr1.gtf
+wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/Bam
 ```
