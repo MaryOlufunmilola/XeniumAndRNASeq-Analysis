@@ -68,7 +68,7 @@ optional arguments:
 
 For example:
 ```
-python3 TBias.py 20 -v example.vcf -b Bam/ -g chr1.gtf 
+python3 TBias.py 20 -v example.vcf -b ~/Trans-Bias/Bam/ -g chr1.gtf
 ```
 
 You can download example bam, vcf and gtf files:
