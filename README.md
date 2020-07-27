@@ -26,7 +26,7 @@ sudo apt install software-properties-common
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
 sudo apt install python3.8
-sudo pip install biopython
+pip install biopython
 ```
 
 Install R packages in >=R3.6
