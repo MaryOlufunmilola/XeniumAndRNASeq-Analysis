@@ -32,6 +32,13 @@ pip install biopython
 Install R packages in >=R3.6
 
 ```
+sudo su 
+echo "deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/" >> /etc/apt/sources.list 
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9 
+apt-get update 
+apt-get install r-base 
+apt-get install r-base-dev
+
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("Rsamtools")
@@ -55,7 +62,7 @@ positional arguments:
 optional arguments:
   -h, --help         show this help message and exit
   -v [VCF], --vcf [VCF]  vcf file (required)
-  -b [BAMDIR], --bamDir [BAMDIR]  Full Path to the bam file(s) (required)
+  -b [BAMDIR], --bamDir [BAMDIR]  Full absolute Path to the bam file(s) (required)
   -g [GTF], --gtf [GTF]  gtf file (required).
 ```
 
