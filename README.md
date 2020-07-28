@@ -58,9 +58,15 @@ wget http://www.innovebioinfo.com/Sequencing_Analysis/Trans-Bias/Bam
 
 ## How it works:
 STEP1: Generate bed file for each sample in vcf file (remove genotype unphased call '0/0', missing allele './.' and Total Depth  < user defined at each position from vcf samples)
+
 STEP2: Generate pileup from Bam and bed files using Rsamtools
+
 STEP3: Converts pileup output into a table of nucleotide frequencies at each SNP position based on strand orientation (A,T,C,G,a,c,g,t)
+
 STEP4: Gene and strand annotatation using reference gtf file (**Genename is not used for further steps at the moment?**)
+
 STEP5: Get alternate allele (usually nucleotides with maximum count value or second maximum if maximum is same as ref) for transcription and non transcription
+
 STEP6: Sum values in rows with same ref to alt allelle for transcription and non transcription
+
 STEP7: Generate figures
