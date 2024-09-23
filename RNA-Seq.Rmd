@@ -1,0 +1,124 @@
+---
+title: "Differential Expression Analysis"
+output: html_document
+---
+
+* Load the required packages:
+``` r
+library(dplyr)
+library(DESeq2) 
+library(ggplot2)
+
+library(tidyr)
+library(DESeq2)
+library(tibble)
+
+library(ashr)
+library(pheatmap)
+library(EnhancedVolcano)
+
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(readr)
+
+if (!file.exists("QC_Plots")){ dir.create("QC_Plots") }  
+if (!file.exists("DEfiles")){ dir.create("DEfiles") }  
+if (!file.exists("Pathway")){dir.create("Pathway") }
+
+sampleA="Ctrl"
+sampleB="Trt"
+
+```
+
+* Read in count data and create metadata
+``` r
+#When read into R, the first two columns are control samples, the last 2 columns are treatment samples and the rownames are genenames. 
+gene_counts <- read.csv("merged.gene_counts.tsv", header=T,sep="\t")
+meta_data <- data.frame(sample=colnames(gene_counts), sample_name=sapply(strsplit(colnames(gene_counts),split = "_"), "[", 2), condition= factor(c(sampleA, sampleA,sampleB, sampleB))) 
+```
+
+* Import data to DEseq2
+``` r
+dds_new <- DESeqDataSetFromMatrix(countData = gene_counts, colData = meta_data, design= ~ condition)
+dds <- DESeq(dds_new)
+resultsNames(dds)
+```
+
+* Differential gene expression
+``` r
+#ashr shrinkage method applied to shrink high log-fold changes with little statistical evidence and account for lowly expressed genes with significant deviation.
+res <- results(dds,  contrast=c("condition", sampleB, sampleA))
+LFC <- lfcShrink(dds, contrast=c("condition", sampleB, sampleA), res=res, type="ashr")
+res <- as.data.frame(LFC) %>% rownames_to_column(var="gene") %>%  mutate(change=case_when(padj < 0.05 ~ "DE", TRUE ~ "Not")) %>% mutate(direction=case_when(change == "DE" & log2FoldChange > 0 ~ "Up", change == "DE" & log2FoldChange < 0 ~ "Down",  TRUE ~ "Not"))
+write_csv(res,paste0("DEfiles/",sampleB,"vs",sampleA,"_result.csv"))
+
+#The total number of DEGs with an adjusted p-value<0.05
+summary(LFC, alpha=0.05)
+
+#subset the significant genes
+LFC.sig = res[res$padj < 0.05 & !is.na(res$padj),]
+
+#The largest fold-changes with a significant p-value
+LFC.sig = LFC.sig[order(abs(LFC.sig$log2FoldChange), decreasing = TRUE),]
+```
+
+* Plots
+``` r
+#Principal component analysis to carry out QC by testing if expected samples cluster together.
+dds_vst <- vst(dds,blind = TRUE)
+counts_vst <- assay(dds_vst)
+pca <- prcomp(t(counts_vst))
+
+pca.data = plotPCA(dds_vst, intgroup = "condition", ntop=1000)
+nudge <- position_nudge(y=2,x=2)
+p <- pca.data + geom_text(aes(label = name), position = nudge) +theme_bw()
+ggsave(filename = paste0("QC_Plots/PCAplot.PC1 vs PC2_",sampleB,"vs",sampleA,".pdf"), plot = p, width=13, height=9)
+
+#A volcano plot is a scatterplot which plots the p-value of differential expression against the fold-change to highlight datapoints of significant genes
+vol_lab <- EnhancedVolcano(res,  lab = res$gene, x = 'log2FoldChange', y = 'pvalue', pCutoff = 10e-4, FCcutoff = 2, xlim = c(-10, 10), ylim = c(0, 200), pointSize = 1.5, labSize = 2.5, title = 'DESeq2 results', subtitle = 'Differential expression', caption = 'FC cutoff, 2; p-value cutoff, 10e-4', legendPosition = "right", legendLabSize = 14, col = c('grey30', 'forestgreen', 'royalblue', 'red2'), colAlpha = 0.9, drawConnectors = TRUE, hline = c(10e-8),
+widthConnectors = 0.5,selectLab = LFC.sig$gene[1:30])
+ggsave(filename = paste0("QC_Plots/Volcanoplot_",sampleB,"vs",sampleA,".pdf"), plot = vol_lab, width=13, height=9)
+
+#Heatmap
+counts_vst_DE <- counts_vst[res$change=="DE",] 
+mydata_col <- data.frame(condition=meta_data$condition , row.names = meta_data$sample) 
+heat_DE <- pheatmap(counts_vst_DE, scale="row", color = colorRampPalette(c("dark blue", "white", "darkred"))(1000), annotation_col = mydata_col,main=paste0(sampleB,"vs",sampleA ," FDR < 0.05"),  show_rownames = F) 
+pdf(paste0("QC_Plots/Heatmap_",sampleB,"vs",sampleA,".pdf"), width=13, height=9) 
+grid::grid.newpage() 
+grid::grid.draw(heat_DE$gtable) 
+dev.off()
+
+```
+* Functional analysis 
+``` r
+#Dot plot depicting the functional enrichment of DEGs from diverse biological processes
+
+options(clusterProfiler.download.method = "wininet")
+eg1 = bitr(res$gene, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+eg2 = merge(res, eg1,by=1)
+
+## Inner loop for Up or Down
+for (j in c("Up", "Down")){
+    DEG <- eg2[eg2$direction == j,]$ENTREZID %>%
+        as.character()
+    
+    # KEGG
+    KEGG <- enrichKEGG(gene = DEG, organism ='hsa', pvalueCutoff = 0.1,qvalueCutoff = 0.1, use_internal_data =FALSE)
+    KEGG <- setReadable(KEGG, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
+    write_csv(as.data.frame(KEGG@result),paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.csv"))
+    saveRDS(KEGG,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.rds"),compress=T)
+    dot_KEGG <- dotplot(KEGG)
+    ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.pdf"), plot = dot_KEGG, width = 13, height = 9)
+    
+    # GO sub-categories
+    for (GO in c("CC", "MF", "BP")) {
+        GO_enrich <- enrichGO(gene = DEG,OrgDb = "org.Hs.eg.db",keyType = "ENTREZID",ont = GO,pvalueCutoff = 0.1,pAdjustMethod = "BH",
+                              qvalueCutoff = 0.1,readable=T)
+        GO_enrich <- simplify(GO_enrich,cutoff=0.7,by="p.adjust",select_fun=min, measure = "Wang")
+        write_csv(as.data.frame(GO_enrich@result),paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".csv"))
+        saveRDS(GO_enrich,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".rds"),compress=T)
+        dot_GO <- dotplot(GO_enrich)
+        ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".pdf"), plot = dot_GO, width = 13, height = 9)
+    }
+}
+```
