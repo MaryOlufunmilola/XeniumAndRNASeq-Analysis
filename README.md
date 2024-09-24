@@ -21,7 +21,9 @@ Using **DESeq2** package in R, a comparison of gene expression between treatment
 **ClusterProfiler** was implemented to perform statistical analysis and visualization of functional profiles for genes and sets of genes.
 The downstream differetial expression analysis is here.
 
+
 # scRNA-Seq Data Analysis
+
 
 # VisiumHD Data Analysis
 
@@ -33,5 +35,6 @@ Visium HD `.h5` data files are in a directory named `data` and the preprocessed 
 ```bash
 nextflow run main.nf -c nextflow.config
 ```
+
 
 # Xenium Data Analysis
