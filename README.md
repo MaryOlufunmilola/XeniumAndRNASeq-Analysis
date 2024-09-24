@@ -27,10 +27,11 @@ The downstream differetial expression analysis is here.
 
 # VisiumHD Data Analysis
 
-#Nextflow pipeline for analyzing Visium HD data using the Seurat package in R
-Nextflow, R and Seurat are the basic required software.
-Nextflow Script named `main.nf` contains the lines of code to preprocess and analyze ((e.g., differential expression, visualization)) the Visium HD data using Seurat.
-Visium HD `.h5` data files are in a directory named `data` and the preprocessed and analyzed data in the `results/` directory.
+Nextflow pipeline for analyzing Visium HD data using the Seurat package in R
+
+**Nextflow**, **R** and **Seurat** are the basic required software.
+Nextflow Script named **main.nf** contains the lines of code to preprocess and analyze ((e.g., differential expression, visualization)) the **Visium HD** data using Seurat.
+Visium HD **.h5** data files are in a directory named `data` and the preprocessed and analyzed data in the `results/` directory.
 
 ```bash
 nextflow run main.nf -c nextflow.config
