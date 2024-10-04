@@ -22,22 +22,9 @@ Using **DESeq2** package in R, a comparison of gene expression between treatment
 The downstream differetial expression analysis is here.
 
 
-# scRNA-Seq Data Analysis
-
-```bash
-Script coming soon
-```
-
 # VisiumHD Data Analysis
 
 Nextflow pipeline for analyzing Visium HD data using the Seurat package in R
-
-```bash
-Script coming soon
-```
-
-
-# Xenium Data Analysis
 
 ```bash
 Script coming soon
