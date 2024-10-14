@@ -19,7 +19,7 @@ nextflow run \
 
 Using **DESeq2** package in R, a comparison of gene expression between treatment and control samples was performed. The Wald test was used to generate p-values and log2 fold changes. Genes with an adjusted p-value < 0.05 and absolute log2 fold change > 1 were called as differentially expressed genes for the comparison. 
 **ClusterProfiler** was implemented to perform statistical analysis and visualization of functional profiles for genes and sets of genes.
-The downstream differetial expression analysis is [here](https://github.com/MaryOlufunmilola/Bioinformatics-Workflows/blob/master/RNA-Seq.Rmd).
+The downstream differential expression analysis is [here](https://github.com/MaryOlufunmilola/Bioinformatics-Workflows/blob/master/RNA-Seq/scripts/RNA-Seq.Rmd).
 
 
 # VisiumHD Data Analysis
