@@ -1,7 +1,15 @@
 ---
 title: "Differential Expression Analysis"
-output: html_document
+author: "Funmi Oyebamiji"
+date: "2024-06-28"
+output:
+  html_document:
+    keep_md: true
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 * Load the required packages:
 ``` r
