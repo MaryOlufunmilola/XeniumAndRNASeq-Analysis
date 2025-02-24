@@ -18,18 +18,15 @@ library(R.utils)
 library(dplyr)
 library(DESeq2) 
 library(ggplot2)
-
 library(tidyr)
-library(DESeq2)
 library(tibble)
 
 library(ashr)
 library(pheatmap)
 library(EnhancedVolcano)
-
 library(clusterProfiler)
 library(org.Hs.eg.db)
-library(readr)
+
 
 if (!file.exists("QC_Plots")){ dir.create("QC_Plots") }  
 if (!file.exists("DEfiles")){ dir.create("DEfiles") }  
@@ -77,8 +74,8 @@ resultsNames(dds)
 #ashr shrinkage method applied to shrink high log-fold changes with little statistical evidence and account for lowly expressed genes with significant deviation.
 res <- results(dds,  contrast=c("condition", sampleB, sampleA))
 LFC <- lfcShrink(dds, contrast=c("condition", sampleB, sampleA), res=res, type="ashr")
-res <- as.data.frame(LFC) %>% rownames_to_column(var="gene") %>%  mutate(change=case_when(padj < 0.05 ~ "DE", TRUE ~ "Not")) %>% mutate(direction=case_when(change == "DE" & log2FoldChange > 0 ~ "Up", change == "DE" & log2FoldChange < 0 ~ "Down",  TRUE ~ "Not"))
-write_csv(res,paste0("DEfiles/",sampleB,"vs",sampleA,"_result.csv"))
+res <- as.data.frame(LFC) %>% rownames_to_column(var="gene") %>%  mutate(change=case_when(padj < 0.05 ~ "DE", TRUE ~ "Not")) %>% mutate(direction=case_when(change == "DE" & log2FoldChange > 1 ~ "Up", change == "DE" & log2FoldChange < -1 ~ "Down",  TRUE ~ "Not"))
+write.csv(res,paste0("DEfiles/",sampleB,"vs",sampleA,"_result.csv"))
 
 #The total number of DEGs with an adjusted p-value<0.05
 summary(LFC, alpha=0.05)
@@ -133,7 +130,6 @@ for (j in c("Up", "Down")){
     # KEGG
     KEGG <- enrichKEGG(gene = DEG, organism ='hsa', pvalueCutoff = 0.1,qvalueCutoff = 0.1, use_internal_data =FALSE)
     KEGG <- setReadable(KEGG, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-    write_csv(as.data.frame(KEGG@result),paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.csv"))
     saveRDS(KEGG,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.rds"),compress=T)
     dot_KEGG <- dotplot(KEGG)
     ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.pdf"), plot = dot_KEGG, width = 13, height = 9)
@@ -143,7 +139,6 @@ for (j in c("Up", "Down")){
         GO_enrich <- enrichGO(gene = DEG,OrgDb = "org.Hs.eg.db",keyType = "ENTREZID",ont = GO,pvalueCutoff = 0.1,pAdjustMethod = "BH",
                               qvalueCutoff = 0.1,readable=T)
         GO_enrich <- simplify(GO_enrich,cutoff=0.7,by="p.adjust",select_fun=min, measure = "Wang")
-        write_csv(as.data.frame(GO_enrich@result),paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".csv"))
         saveRDS(GO_enrich,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".rds"),compress=T)
         dot_GO <- dotplot(GO_enrich)
         ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".pdf"), plot = dot_GO, width = 13, height = 9)
