@@ -5,8 +5,16 @@
 PROJECTNAME <- ""
 setwd(paste0("/home/ubuntu/", PROJECTNAME)
 
+# Install and Load required libraries
+# install.packages("pacman", repos='http://cran.us.r-project.org', quiet=TRUE)
+# library(devtools)
+# install_github('immunogenomics/presto')
+# bio_pkgs <- c('SingleR','glmGamPoi','celldex') 
+# BiocManager::install(bio_pkgs,force=TRUE)
+# invisible(lapply(bio_pkgs, function(x) library(x, character.only=TRUE)))
+      
 library(pacman)
-pacman::p_load(Polychrome, future, ggplot2, ggrepel, arrow, gridExtra, BiocManager, devtools, Seurat,scCustomize, UCell,presto,parallel,dplyr)             
+pacman::p_load(Polychrome, future, ggplot2, ggrepel, gridExtra, Seurat,scCustomize, UCell,presto,parallel,dplyr)             
 
 xeniumData <- "data/"  # args[1:(length(args) - 1)]
 resultsDir <- "results/" # args[length(args)]
