@@ -64,9 +64,8 @@ if (!dir.exists(starsalmonCounts_folder)) dir.create(starsalmonCounts_folder, re
 # ===================
 ``` r
 setwd(starsalmonCounts_folder)
-df1 <- read.csv("H:/Backup_I_J_drive/ScottNess/Anitha/2024/merged.gene_counts.tsv", header = TRUE, sep = "\t") #salmon.merged.gene_counts
-colnames(df1)[1] <- "gene_name"
-df1 <- aggregate(. ~ gene_name, data = df1, mean) # aggregate(. ~ gene_name, data = df1[,-1], mean)
+df1 <- read.csv("salmon.merged.gene_counts", header = TRUE, sep = "\t")
+df1 <- aggregate(. ~ gene_name, data = df1[,-1], mean)
 gene_counts <- df1[,-1]
 rownames(gene_counts) <- df1[,1]
 
@@ -156,7 +155,6 @@ dev.off()
 # Functional Enrichment Analysis
 # ===================
 ``` r
-#options(clusterProfiler.download.method = "wininet")
 
 eg1 <- bitr(res_df$gene, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = orgdb)
 eg2 <- merge(res_df, eg1, by = 1) 
@@ -178,7 +176,7 @@ save_enrichment <- function(enrich_obj, filename_prefix) {
 deg_sig <- eg2 %>% filter(padj < 0.05)
 
 # KEGG enrichment
-ekg <- enrichKEGG(gene = deg_sig$ENTREZID, organism = "hsa", pvalueCutoff = 0.1, qvalueCutoff = 0.2) # mmu
+ekg <- enrichKEGG(gene = deg_sig$ENTREZID, organism = "hsa", pvalueCutoff = 0.1, qvalueCutoff = 0.2) # organism = "mmu"
 ekg <- setReadable(ekg, OrgDb = orgdb, keyType = "ENTREZID")
 save_enrichment(ekg, paste0("Pathway/", sampleB, "vs", sampleA, ".KEGG"))
 
@@ -189,7 +187,7 @@ save_enrichment(go_enrich, paste0("Pathway/", sampleB, "vs", sampleA, ".GO"))
 
 # Reactome pathway enrichment
 reactome_enrich <- enrichPathway(gene = deg_sig$ENTREZID, organism = "human",
-                                 pAdjustMethod = "BH", pvalueCutoff = 0.1, qvalueCutoff = 0.2, readable = TRUE) # mouse
+                                 pAdjustMethod = "BH", pvalueCutoff = 0.1, qvalueCutoff = 0.2, readable = TRUE) # organism = "mouse"
 save_enrichment(reactome_enrich, paste0("Pathway/", sampleB, "vs", sampleA, ".Reactome"))
 
 # Prepare gene list for GSEA: named vector of log2 fold changes, sorted decreasingly
@@ -200,7 +198,7 @@ gene_list <- res_df %>%
 
 # Load MSigDB Hallmark gene sets for mouse
 msig_mouse_hallmark <- msigdbr(species = "Homo sapiens", collection = "H") %>%
-   dplyr::select(gs_name, gene_symbol) # Mus musculus
+   dplyr::select(gs_name, gene_symbol) # species = "Mus musculus"
 
 # Run GSEA
 gsea_result <- GSEA(geneList = gene_list, TERM2GENE = msig_mouse_hallmark,
