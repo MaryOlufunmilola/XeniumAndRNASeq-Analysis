@@ -11,137 +11,203 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-* Load the required packages:
+# ===================
+# Load required packages
+# ===================
 ``` r
-
 library(R.utils)
-library(dplyr)
 library(DESeq2) 
-library(ggplot2)
-library(tidyr)
-library(tibble)
-
-library(ashr)
-library(pheatmap)
+library(tidyverse) #dplyr, tibble
+library(ggrepel)
 library(EnhancedVolcano)
+library(pheatmap)
 library(clusterProfiler)
 library(org.Hs.eg.db)
-
-
-if (!file.exists("QC_Plots")){ dir.create("QC_Plots") }  
-if (!file.exists("DEfiles")){ dir.create("DEfiles") }  
-if (!file.exists("Pathway")){dir.create("Pathway") }
-
-sampleA="Ctrl"
-sampleB="Trt"
+library(msigdbr)
+library(ReactomePA)
 
 ```
 
-* Read in count data and create metadata
+# ===================
+# Setup & directories
+# ===================
 ``` r
-# Empty quotes filled with appropriate names
-PI_project = ""
-PI_name = ""
-PI_genome = ""
-Aligned_date = ""
-s3_bucket_used = ""
-Pipeline_name = "nfcore_rnaseqPipeline_results"
-starsalmonCounts_folder = paste0("/home/ubuntu/Projects", PI_name, "-", PI_project,"-", PI_genome)
-mkdirs(starsalmonCounts_folder)
+sampleA <- "Ctrl"
+sampleB <- "Trt"
 
-## Define gene table directory in s3 bucket
-starsalmonCounts_in_s3 = paste0("s3://", s3_bucket_used, "/", PI_name, "/", Pipeline_name, "_", Aligned_date, "/star_salmon/")
+if (!dir.exists("QC_Plots")) dir.create("QC_Plots")
+if (!dir.exists("DEfiles")) dir.create("DEfiles")
+if (!dir.exists("Pathway")) dir.create("Pathway")
 
-## Copy data from s3 bucket to gene folder
-sync_from_s3 = paste("sudo aws s3 sync", starsalmonCounts_in_s3, starsalmonCounts_folder, '--exclude',  '"*"', '--include', '"salmon.merged.gene_counts.tsv"', sep=" ")
-system(sync_from_s3, intern=T)
+# Fill in metadata
+PI_project <- ""  # e.g., "LungRNA"
+PI_name <- ""     # e.g., "DrSmith"
+PI_genome <- ""   # e.g., "hg38"
+Projects_dir <- ""   # e.g., "/home/ubuntu/Projects"
+orgdb <- org.Hs.eg.db # e.g., org.Mm.eg.db
+#Aligned_date <- "" # e.g., "2024-11-01"
+#s3_bucket_used <- "" # e.g., "mybucket"
+#Pipeline_name <- "nfcore_rnaseqPipeline_results"
 
+starsalmonCounts_folder <- file.path(Projects_dir, paste0(PI_name, "-", PI_project, "-", PI_genome))
+if (!dir.exists(starsalmonCounts_folder)) dir.create(starsalmonCounts_folder, recursive = TRUE)
+
+# Sync gene count data from S3
+#starsalmonCounts_in_s3 <- paste0("s3://", s3_bucket_used, "/", PI_name, "/", Pipeline_name, "_", Aligned_date, "/star_salmon/")
+#sync_cmd <- paste("sudo aws s3 sync", starsalmonCounts_in_s3, starsalmonCounts_folder,
+#                  '--exclude "*" --include "salmon.merged.gene_counts.tsv"')
+#system(sync_cmd, intern = TRUE)
+```
+
+# ===================
+# Load counts and metadata
+# ===================
+``` r
 setwd(starsalmonCounts_folder)
-#When read into R, the first two columns are control samples, the last 2 columns are treatment samples and the rownames are genenames. 
-gene_counts <- read.csv("salmon.merged.gene_counts.tsv", header=T,sep="\t")
-meta_data <- data.frame(sample=colnames(gene_counts), sample_name=sapply(strsplit(colnames(gene_counts),split = "_"), "[", 2), condition= factor(c(sampleA, sampleA,sampleB, sampleB))) 
+df1 <- read.csv("H:/Backup_I_J_drive/ScottNess/Anitha/2024/merged.gene_counts.tsv", header = TRUE, sep = "\t") #salmon.merged.gene_counts
+colnames(df1)[1] <- "gene_name"
+df1 <- aggregate(. ~ gene_name, data = df1, mean) # aggregate(. ~ gene_name, data = df1[,-1], mean)
+gene_counts <- df1[,-1]
+rownames(gene_counts) <- df1[,1]
+
+# Check column names and build condition vector accordingly
+samples <- colnames(gene_counts)
+# Assume sample naming are arranged in "Ctrl" then "Trt" order
+condition <- factor(c(sampleA, sampleA, sampleB, sampleB))
+meta_data <- data.frame(sample = samples,
+                        condition = factor(condition),
+                        row.names = samples)
+
 ```
 
-* Import data to DEseq2
+# ===================
+# DESeq2 pipeline
+# ===================
 ``` r
-dds_new <- DESeqDataSetFromMatrix(countData = gene_counts, colData = meta_data, design= ~ condition)
+dds_new <- DESeqDataSetFromMatrix(countData = round(gene_counts),
+                                  colData = meta_data,
+                                  design = ~ condition)
 dds <- DESeq(dds_new)
 resultsNames(dds)
+
+# Differential expression
+res <- results(dds, contrast = c("condition", sampleB, sampleA))
+LFC <- lfcShrink(dds, contrast = c("condition", sampleB, sampleA), res = res, type = "ashr")
+res_df <- as.data.frame(LFC) %>%
+  rownames_to_column(var = "gene") %>%
+  mutate(change = ifelse(padj < 0.05, "DE", "Not"),
+         direction = case_when(
+           change == "DE" & log2FoldChange > 1 ~ "Up",
+           change == "DE" & log2FoldChange < -1 ~ "Down",
+           TRUE ~ "Not"
+         ))
+
+write.csv(res_df, paste0("DEfiles/", sampleB, "vs", sampleA, "_result.csv"), row.names = FALSE)
+
+# Filter significant
+LFC.sig <- res_df %>% filter(padj < 0.05 & !is.na(padj)) %>% arrange(desc(abs(log2FoldChange)))
 ```
 
-* Differential gene expression
+# ===================
+# Plots
+# ===================
 ``` r
-#ashr shrinkage method applied to shrink high log-fold changes with little statistical evidence and account for lowly expressed genes with significant deviation.
-res <- results(dds,  contrast=c("condition", sampleB, sampleA))
-LFC <- lfcShrink(dds, contrast=c("condition", sampleB, sampleA), res=res, type="ashr")
-res <- as.data.frame(LFC) %>% rownames_to_column(var="gene") %>%  mutate(change=case_when(padj < 0.05 ~ "DE", TRUE ~ "Not")) %>% mutate(direction=case_when(change == "DE" & log2FoldChange > 1 ~ "Up", change == "DE" & log2FoldChange < -1 ~ "Down",  TRUE ~ "Not"))
-write.csv(res,paste0("DEfiles/",sampleB,"vs",sampleA,"_result.csv"))
+# PCA Plot
+dds_vst <- vst(dds, blind = TRUE)
+pca_data <- plotPCA(dds_vst, intgroup = "condition", returnData = TRUE)
+percentVar <- round(100 * attr(pca_data, "percentVar"))
 
-#The total number of DEGs with an adjusted p-value<0.05
-summary(LFC, alpha=0.05)
+p <- ggplot(pca_data, aes(PC1, PC2, color = condition, label = rownames(pca_data))) +
+  geom_point(size = 3) +
+  geom_text_repel() +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  theme_bw()
 
-#subset the significant genes
-LFC.sig = res[res$padj < 0.05 & !is.na(res$padj),]
+ggsave(paste0("QC_Plots/PCAplot_", sampleB, "vs", sampleA, ".pdf"), plot = p, width = 13, height = 9)
 
-#The largest fold-changes with a significant p-value
-LFC.sig = LFC.sig[order(abs(LFC.sig$log2FoldChange), decreasing = TRUE),]
-```
+# Volcano Plot
+vol_lab <- EnhancedVolcano(res_df,  
+                            lab = res_df$gene, x = 'log2FoldChange', y = 'pvalue', pCutoff = 10e-4, FCcutoff = 2, 
+                            xlim = c(-10, 10), ylim = c(0, 200), pointSize = 1.5, labSize = 2.5, title = 'DESeq2 results', 
+                            subtitle = 'Differential expression', caption = 'FC cutoff, 2; p-value cutoff, 1e-4', 
+                            legendPosition = "right", legendLabSize = 14, col = c('grey30', 'forestgreen', 'royalblue', 'red2'), 
+                            colAlpha = 0.9, drawConnectors = TRUE, hline = c(1e-8), widthConnectors = 0.5,selectLab = LFC.sig$gene[1:30])
 
-* Plots
-``` r
-#Principal component analysis to carry out QC by testing if expected samples cluster together.
-dds_vst <- vst(dds,blind = TRUE)
-counts_vst <- assay(dds_vst)
-pca <- prcomp(t(counts_vst))
-
-pca.data = plotPCA(dds_vst, intgroup = "condition", ntop=1000)
-nudge <- position_nudge(y=2,x=2)
-p <- pca.data + geom_text(aes(label = name), position = nudge) +theme_bw()
-ggsave(filename = paste0("QC_Plots/PCAplot.PC1 vs PC2_",sampleB,"vs",sampleA,".pdf"), plot = p, width=13, height=9)
-
-#A volcano plot is a scatterplot which plots the p-value of differential expression against the fold-change to highlight datapoints of significant genes
-vol_lab <- EnhancedVolcano(res,  lab = res$gene, x = 'log2FoldChange', y = 'pvalue', pCutoff = 10e-4, FCcutoff = 2, xlim = c(-10, 10), ylim = c(0, 200), pointSize = 1.5, labSize = 2.5, title = 'DESeq2 results', subtitle = 'Differential expression', caption = 'FC cutoff, 2; p-value cutoff, 10e-4', legendPosition = "right", legendLabSize = 14, col = c('grey30', 'forestgreen', 'royalblue', 'red2'), colAlpha = 0.9, drawConnectors = TRUE, hline = c(10e-8),
-widthConnectors = 0.5,selectLab = LFC.sig$gene[1:30])
 ggsave(filename = paste0("QC_Plots/Volcanoplot_",sampleB,"vs",sampleA,".pdf"), plot = vol_lab, width=13, height=9)
 
-#Heatmap
-counts_vst_DE <- counts_vst[res$change=="DE",] 
-mydata_col <- data.frame(condition=meta_data$condition , row.names = meta_data$sample) 
-heat_DE <- pheatmap(counts_vst_DE, scale="row", color = colorRampPalette(c("dark blue", "white", "darkred"))(1000), annotation_col = mydata_col,main=paste0(sampleB,"vs",sampleA ," FDR < 0.05"),  show_rownames = F) 
+# Heatmap of DE Genes
+counts_vst <- assay(dds_vst)
+counts_vst_DE <- counts_vst[rownames(counts_vst) %in% LFC.sig$gene,] # counts_vst_DE <- counts_vst[res$change=="DE",] 
+mydata_col <- data.frame(condition = meta_data$condition, row.names = rownames(meta_data)) # row.names = meta_data$sample) 
+
+heat_DE <- pheatmap(counts_vst_DE, scale="row", color = colorRampPalette(c("dark blue", "white", "darkred"))(1000), 
+                    annotation_col = mydata_col, 
+                    main=paste0(sampleB,"vs",sampleA ," FDR < 0.05"),  show_rownames = F) 
+                    
 pdf(paste0("QC_Plots/Heatmap_",sampleB,"vs",sampleA,".pdf"), width=13, height=9) 
 grid::grid.newpage() 
 grid::grid.draw(heat_DE$gtable) 
 dev.off()
-
 ```
-* Functional analysis 
+
+
+# ===================
+# Functional Enrichment Analysis
+# ===================
 ``` r
-#Dot plot depicting the functional enrichment of DEGs from diverse biological processes
+#options(clusterProfiler.download.method = "wininet")
 
-options(clusterProfiler.download.method = "wininet")
-eg1 = bitr(res$gene, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
-eg2 = merge(res, eg1,by=1)
+eg1 <- bitr(res_df$gene, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = orgdb)
+eg2 <- merge(res_df, eg1, by = 1) 
 
-## Inner loop for Up or Down
-for (j in c("Up", "Down")){
-    DEG <- eg2[eg2$direction == j,]$ENTREZID %>%
-        as.character()
-    
-    # KEGG
-    KEGG <- enrichKEGG(gene = DEG, organism ='hsa', pvalueCutoff = 0.1,qvalueCutoff = 0.1, use_internal_data =FALSE)
-    KEGG <- setReadable(KEGG, OrgDb = org.Hs.eg.db, keyType="ENTREZID")
-    saveRDS(KEGG,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.rds"),compress=T)
-    dot_KEGG <- dotplot(KEGG)
-    ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".KEGG.pdf"), plot = dot_KEGG, width = 13, height = 9)
-    
-    # GO sub-categories
-    for (GO in c("CC", "MF", "BP")) {
-        GO_enrich <- enrichGO(gene = DEG,OrgDb = "org.Hs.eg.db",keyType = "ENTREZID",ont = GO,pvalueCutoff = 0.1,pAdjustMethod = "BH",
-                              qvalueCutoff = 0.1,readable=T)
-        GO_enrich <- simplify(GO_enrich,cutoff=0.7,by="p.adjust",select_fun=min, measure = "Wang")
-        saveRDS(GO_enrich,paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".rds"),compress=T)
-        dot_GO <- dotplot(GO_enrich)
-        ggsave(filename = paste0("Pathway/",sampleB,"vs",sampleA,".",j,".",GO,".pdf"), plot = dot_GO, width = 13, height = 9)
-    }
+# Helper function to save enrichment results and plots
+save_enrichment <- function(enrich_obj, filename_prefix) {
+  # Convert results to dataframe
+  res_df <- as.data.frame(enrich_obj@result)
+  
+  # Save TXT
+  write.table(res_df, paste0(filename_prefix, ".txt"), quote = FALSE, sep = "\t", row.names = FALSE)
+  
+  # Create and save dotplot
+  dp <- dotplot(enrich_obj)
+  ggsave(filename = paste0(filename_prefix, ".pdf"), plot = dp, width = 13, height = 9)
 }
+
+# Filter significant genes
+deg_sig <- eg2 %>% filter(padj < 0.05)
+
+# KEGG enrichment
+ekg <- enrichKEGG(gene = deg_sig$ENTREZID, organism = "hsa", pvalueCutoff = 0.1, qvalueCutoff = 0.2) # mmu
+ekg <- setReadable(ekg, OrgDb = orgdb, keyType = "ENTREZID")
+save_enrichment(ekg, paste0("Pathway/", sampleB, "vs", sampleA, ".KEGG"))
+
+# GO enrichment (all ontologies)
+go_enrich <- enrichGO(gene = deg_sig$ENTREZID, OrgDb = orgdb, ont = "ALL",
+                      pAdjustMethod = "BH", pvalueCutoff = 0.1, qvalueCutoff = 0.2, readable = TRUE)
+save_enrichment(go_enrich, paste0("Pathway/", sampleB, "vs", sampleA, ".GO"))
+
+# Reactome pathway enrichment
+reactome_enrich <- enrichPathway(gene = deg_sig$ENTREZID, organism = "human",
+                                 pAdjustMethod = "BH", pvalueCutoff = 0.1, qvalueCutoff = 0.2, readable = TRUE) # mouse
+save_enrichment(reactome_enrich, paste0("Pathway/", sampleB, "vs", sampleA, ".Reactome"))
+
+# Prepare gene list for GSEA: named vector of log2 fold changes, sorted decreasingly
+gene_list <- res_df %>% 
+    arrange(desc(log2FoldChange)) %>% 
+    dplyr::select(gene, log2FoldChange) %>% 
+    deframe()
+
+# Load MSigDB Hallmark gene sets for mouse
+msig_mouse_hallmark <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+   dplyr::select(gs_name, gene_symbol) # Mus musculus
+
+# Run GSEA
+gsea_result <- GSEA(geneList = gene_list, TERM2GENE = msig_mouse_hallmark,
+                    pvalueCutoff = 0.1, minGSSize = 3)
+
+# Save GSEA results
+save_enrichment(gsea_result, paste0("Pathway/", sampleB, "vs", sampleA, ".Hallmark"))
+
+
 ```
